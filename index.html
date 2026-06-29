@@ -5,74 +5,169 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MyTask — Sistem Pengurusan Tugasan</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
 
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-        <div class="logo">
-            <h2>🗒️ MyTask</h2>
-            <p>Sistem Pengurusan Tugasan LI</p>
+    <!-- ===== HALAMAN LOG MASUK ===== -->
+    <div id="halaman-login">
+        <div class="login-box">
+            <div class="login-logo">🗒️ MyTask</div>
+            <p class="login-sub">Sistem Pengurusan Tugasan Latihan Industri</p>
+
+            <div class="role-switch">
+                <button class="role-btn active" onclick="pilihRole('sv', this)">👨‍🏫 SV / Penyelia</button>
+                <button class="role-btn" onclick="pilihRole('pelajar', this)">🎓 Pelajar</button>
+            </div>
+
+            <div class="form-group">
+                <label>Emel</label>
+                <input type="email" id="login-email" placeholder="emel@gmail.com">
+            </div>
+            <div class="form-group">
+                <label>Kata Laluan</label>
+                <input type="password" id="login-password" placeholder="••••••••">
+            </div>
+
+            <div id="login-error" class="login-error" style="display:none;">
+                ⚠️ Emel atau kata laluan salah!
+            </div>
+
+            <button class="btn-login" onclick="logMasuk()">Log Masuk</button>
+
+            <div class="login-hint">
+                <b>Akaun Demo:</b><br>
+                SV → sv@mytask.com / sv1234<br>
+                Pelajar → pelajar@mytask.com / pelajar1234
+            </div>
         </div>
-        <nav>
-            <a href="#" class="nav-item active">📊 Papan Pemuka</a>
-            <a href="#" class="nav-item">✅ Tugasan</a>
-            <a href="#" class="nav-item">🔔 Notifikasi</a>
-            <a href="#" class="nav-item">📋 Laporan Harian</a>
-        </nav>
     </div>
 
-    <!-- MAIN -->
-    <div class="main">
+    <!-- ===== SISTEM UTAMA ===== -->
+    <div id="sistem-utama" style="display:none;">
 
-        <!-- STATS -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="label">Jumlah Tugasan</div>
-                <div class="value biru">8</div>
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="logo">
+                <h2>🗒️ MyTask</h2>
+                <p>Sistem Pengurusan Tugasan LI</p>
             </div>
-            <div class="stat-card">
-                <div class="label">Overdue</div>
-                <div class="value merah">2</div>
-            </div>
-            <div class="stat-card">
-                <div class="label">Dalam Proses</div>
-                <div class="value kuning">3</div>
-            </div>
-            <div class="stat-card">
-                <div class="label">Selesai</div>
-                <div class="value hijau">3</div>
+            <nav>
+                <a href="#" class="nav-item active" data-page="page-dashboard">📊 Papan Pemuka</a>
+                <a href="#" class="nav-item" data-page="page-tugasan">✅ Tugasan</a>
+                <a href="#" class="nav-item" data-page="page-notifikasi">🔔 Notifikasi <span class="nav-badge">2</span></a>
+                <a href="#" class="nav-item" data-page="page-laporan">📋 Laporan Harian</a>
+            </nav>
+            <div class="sidebar-user">
+                <div class="user-avatar" id="user-avatar">S</div>
+                <div>
+                    <div class="user-name" id="user-name">SV</div>
+                    <div class="user-role" id="user-role">Penyelia</div>
+                </div>
+                <button class="btn-logout" onclick="logKeluar()" title="Log Keluar">🚪</button>
             </div>
         </div>
 
-        <!-- TUGASAN -->
-        <div class="section-title">Tugasan Terkini</div>
+        <!-- MAIN -->
+        <div class="main">
 
-        <div class="task-card overdue">
-            <div class="task-header">
-                <div class="task-title">Hantar Laporan Minggu 4</div>
-                <span class="pill overdue">Overdue</span>
+            <!-- PAGE: DASHBOARD -->
+            <div class="page active" id="page-dashboard">
+                <h2 class="page-title">📊 Papan Pemuka</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="label">Jumlah Tugasan</div>
+                        <div class="value biru" id="stat-semua">3</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Overdue</div>
+                        <div class="value merah" id="stat-overdue">1</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Dalam Proses</div>
+                        <div class="value kuning" id="stat-proses">1</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Selesai</div>
+                        <div class="value hijau" id="stat-selesai">1</div>
+                    </div>
+                </div>
+                <div class="section-title">Tugasan Terkini</div>
+                <div id="dashboard-tugasan"></div>
             </div>
-            <div class="task-meta">📅 20 Jun 2026 &nbsp;|&nbsp; 👤 Ahmad Faris</div>
-            <div class="reason-box">💬 <b>SV:</b> Laporan minggu 4 perlu diserahkan segera.</div>
-        </div>
 
-        <div class="task-card proses">
-            <div class="task-header">
-                <div class="task-title">Dokumentasi API Backend</div>
-                <span class="pill proses">Dalam Proses</span>
+            <!-- PAGE: TUGASAN -->
+            <div class="page" id="page-tugasan">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+                    <h2 class="page-title" style="margin:0">✅ Senarai Tugasan</h2>
+                    <button class="btn-tambah" id="btn-tambah-tugasan" onclick="bukaModal()">+ Tugasan Baharu</button>
+                </div>
+                <div id="senarai-tugasan"></div>
             </div>
-            <div class="task-meta">📅 30 Jun 2026 &nbsp;|&nbsp; 👤 Nurul Izzah</div>
-        </div>
 
-        <div class="task-card selesai">
-            <div class="task-header">
-                <div class="task-title">Pembangunan Modul Login</div>
-                <span class="pill selesai">Selesai</span>
+            <!-- PAGE: NOTIFIKASI -->
+            <div class="page" id="page-notifikasi">
+                <h2 class="page-title">🔔 Notifikasi &amp; Peringatan</h2>
+                <div id="senarai-notifikasi"></div>
             </div>
-            <div class="task-meta">📅 Siap: 18 Jun 2026 &nbsp;|&nbsp; 👤 Ahmad Faris</div>
-        </div>
 
+            <!-- PAGE: LAPORAN HARIAN -->
+            <div class="page" id="page-laporan">
+                <h2 class="page-title">📋 Laporan Harian &amp; Skop Kerja</h2>
+                <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+                    <div class="stat-card">
+                        <div class="label">Skop Selesai</div>
+                        <div class="value hijau" id="laporan-selesai">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Dalam Proses</div>
+                        <div class="value kuning" id="laporan-proses">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Overdue</div>
+                        <div class="value merah" id="laporan-overdue">0</div>
+                    </div>
+                </div>
+                <div class="section-title">Log Skop Kerja Harian</div>
+                <div id="senarai-laporan"></div>
+                <div class="summary-box" style="margin-top:1rem;">
+                    <div class="summary-title">📝 Ringkasan Hari Ini</div>
+                    <p id="teks-ringkasan">Memuatkan...</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL TAMBAH TUGASAN -->
+    <div class="modal-overlay" id="modal-tugasan">
+        <div class="modal">
+            <h3>➕ Tambah Tugasan Baharu</h3>
+            <div class="form-group">
+                <label>Tajuk Tugasan</label>
+                <input type="text" id="input-tajuk" placeholder="Tajuk tugasan...">
+            </div>
+            <div class="form-group">
+                <label>Tarikh Akhir</label>
+                <input type="date" id="input-tarikh">
+            </div>
+            <div class="form-group">
+                <label>Nama Pelajar</label>
+                <input type="text" id="input-pelajar" placeholder="Nama pelajar...">
+            </div>
+            <div class="form-group">
+                <label>Emel Pelajar (untuk reminder)</label>
+                <input type="email" id="input-email-pelajar" placeholder="pelajar@gmail.com">
+            </div>
+            <div class="form-group">
+                <label>Arahan / Sebab SV</label>
+                <textarea id="input-reason" placeholder="Arahan dari SV..."></textarea>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:1rem;">
+                <button class="btn-tambah" onclick="tambahTugasan()">✅ Simpan</button>
+                <button class="btn-batal" onclick="tutupModal()">❌ Batal</button>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>

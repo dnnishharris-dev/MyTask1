@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTask — Sistem Pengurusan Tugasan</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+        <div class="logo">
+            <h2>🗒️ MyTask</h2>
+            <p>Sistem Pengurusan Tugasan LI</p>
+        </div>
+        <nav>
+            <a href="#" class="nav-item active">📊 Papan Pemuka</a>
+            <a href="#" class="nav-item">✅ Tugasan</a>
+            <a href="#" class="nav-item">🔔 Notifikasi</a>
+            <a href="#" class="nav-item">📋 Laporan Harian</a>
+        </nav>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+
+        <!-- STATS -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="label">Jumlah Tugasan</div>
+                <div class="value biru">8</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Overdue</div>
+                <div class="value merah">2</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Dalam Proses</div>
+                <div class="value kuning">3</div>
+            </div>
+            <div class="stat-card">
+                <div class="label">Selesai</div>
+                <div class="value hijau">3</div>
+            </div>
+        </div>
+
+        <!-- TUGASAN -->
+        <div class="section-title">Tugasan Terkini</div>
+
+        <div class="task-card overdue">
+            <div class="task-header">
+                <div class="task-title">Hantar Laporan Minggu 4</div>
+                <span class="pill overdue">Overdue</span>
+            </div>
+            <div class="task-meta">📅 20 Jun 2026 &nbsp;|&nbsp; 👤 Ahmad Faris</div>
+            <div class="reason-box">💬 <b>SV:</b> Laporan minggu 4 perlu diserahkan segera.</div>
+        </div>
+
+        <div class="task-card proses">
+            <div class="task-header">
+                <div class="task-title">Dokumentasi API Backend</div>
+                <span class="pill proses">Dalam Proses</span>
+            </div>
+            <div class="task-meta">📅 30 Jun 2026 &nbsp;|&nbsp; 👤 Nurul Izzah</div>
+        </div>
+
+        <div class="task-card selesai">
+            <div class="task-header">
+                <div class="task-title">Pembangunan Modul Login</div>
+                <span class="pill selesai">Selesai</span>
+            </div>
+            <div class="task-meta">📅 Siap: 18 Jun 2026 &nbsp;|&nbsp; 👤 Ahmad Faris</div>
+        </div>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

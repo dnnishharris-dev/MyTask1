@@ -35,8 +35,7 @@
 * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; transition: background 0.3s, color 0.2s; }
 body { background: var(--bg); min-height: 100vh; color: var(--text-primary); }
 
-/* ===== LOGIN ===== */
-#halaman-login {
+#halaman-login, #halaman-daftar {
     min-height: 100vh;
     display: flex;
     align-items: center;

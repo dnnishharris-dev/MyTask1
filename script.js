@@ -1,26 +1,68 @@
-// ===== AKAUN =====
-const akaun = {
-    sv: { emel: 'sv@mytask.com', password: 'sv1234', nama: 'Harris Danish', role: 'SV / Penyelia' },
-    pelajar: { emel: 'pelajar@mytask.com', password: 'pelajar1234', nama: 'Ahmad Faris', role: 'Pelajar LI' }
-};
+// ===== STORAGE KEYS =====
+const KEY_AKAUN = 'mytask_akaun';
+const KEY_TUGASAN = 'mytask_tugasan';
+const KEY_LAPORAN = 'mytask_laporan';
+const KEY_SESI = 'mytask_sesi';
 
 let roleSekarang = 'sv';
+let roleDaftarSekarang = 'sv';
 let penggunaLogin = null;
 let filterAktif = 'semua';
 let modGelap = false;
 
-// ===== DATA TUGASAN =====
-let tugasan = [
-    { id: 1, tajuk: 'Hantar Laporan Minggu 4', tarikh: '2026-06-20', pelajar: 'Ahmad Faris', email: 'pelajar@mytask.com', reason: 'Laporan minggu 4 perlu diserahkan segera.', status: 'overdue' },
-    { id: 2, tajuk: 'Dokumentasi API Backend', tarikh: '2026-06-30', pelajar: 'Nurul Izzah', email: 'nurul@mytask.com', reason: 'Pastikan semua endpoint didokumentasikan.', status: 'proses' },
-    { id: 3, tajuk: 'Pembangunan Modul Login', tarikh: '2026-06-18', pelajar: 'Ahmad Faris', email: 'pelajar@mytask.com', reason: '', status: 'selesai' }
-];
+// ===== MUAT DATA DARI LOCALSTORAGE =====
+function muatAkaun() {
+    const data = localStorage.getItem(KEY_AKAUN);
+    if (data) return JSON.parse(data);
 
-// ===== DATA LAPORAN =====
-let laporan = [
-    { id: 1, skop: 'Bangunkan halaman login frontend', tarikh: '2026-06-29', pelajar: 'Ahmad Faris', status: 'selesai', catatan: 'Siap dengan validasi form.' },
-    { id: 2, skop: 'Dokumentasi endpoint GET/POST', tarikh: '2026-06-29', pelajar: 'Nurul Izzah', status: 'proses', catatan: 'Masih dalam proses dokumentasi.' }
-];
+    // Akaun demo default (kali pertama sahaja)
+    const default_akaun = [
+        { nama: 'Harris Danish', emel: 'sv@mytask.com', password: 'sv1234', role: 'sv' },
+        { nama: 'Ahmad Faris', emel: 'pelajar@mytask.com', password: 'pelajar1234', role: 'pelajar' }
+    ];
+    localStorage.setItem(KEY_AKAUN, JSON.stringify(default_akaun));
+    return default_akaun;
+}
+
+function simpanAkaun(senarai) {
+    localStorage.setItem(KEY_AKAUN, JSON.stringify(senarai));
+}
+
+function muatTugasanData() {
+    const data = localStorage.getItem(KEY_TUGASAN);
+    if (data) return JSON.parse(data);
+    const default_tugasan = [
+        { id: 1, tajuk: 'Hantar Laporan Minggu 4', tarikh: '2026-06-20', pelajar: 'Ahmad Faris', email: 'pelajar@mytask.com', reason: 'Laporan minggu 4 perlu diserahkan segera.', status: 'overdue' },
+        { id: 2, tajuk: 'Dokumentasi API Backend', tarikh: '2026-06-30', pelajar: 'Ahmad Faris', email: 'pelajar@mytask.com', reason: 'Pastikan semua endpoint didokumentasikan.', status: 'proses' }
+    ];
+    localStorage.setItem(KEY_TUGASAN, JSON.stringify(default_tugasan));
+    return default_tugasan;
+}
+
+function simpanTugasanData() {
+    localStorage.setItem(KEY_TUGASAN, JSON.stringify(tugasan));
+}
+
+function muatLaporanData() {
+    const data = localStorage.getItem(KEY_LAPORAN);
+    if (data) return JSON.parse(data);
+    localStorage.setItem(KEY_LAPORAN, JSON.stringify([]));
+    return [];
+}
+
+function simpanLaporanData() {
+    localStorage.setItem(KEY_LAPORAN, JSON.stringify(laporan));
+}
+
+// ===== DATA UTAMA =====
+let tugasan = muatTugasanData();
+let laporan = muatLaporanData();
+
+// ===== TUKAR HALAMAN LOGIN/DAFTAR =====
+function papar(halaman) {
+    document.getElementById('halaman-login').style.display = halaman === 'login' ? 'flex' : 'none';
+    document.getElementById('halaman-daftar').style.display = halaman === 'daftar' ? 'flex' : 'none';
+}
 
 // ===== DARK MODE =====
 function toggelMode() {
@@ -29,25 +71,74 @@ function toggelMode() {
     document.getElementById('btn-mode').textContent = modGelap ? '☀️ Light Mode' : '🌙 Dark Mode';
 }
 
-// ===== PILIH ROLE =====
+// ===== PILIH ROLE LOGIN =====
 function pilihRole(role, el) {
     roleSekarang = role;
-    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+    el.parentElement.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
     el.classList.add('active');
+}
+
+// ===== PILIH ROLE DAFTAR =====
+function pilihRoleDaftar(role, el) {
+    roleDaftarSekarang = role;
+    el.parentElement.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+}
+
+// ===== DAFTAR AKAUN BAHARU =====
+function daftarAkaun() {
+    const nama = document.getElementById('daftar-nama').value.trim();
+    const emel = document.getElementById('daftar-email').value.trim().toLowerCase();
+    const password = document.getElementById('daftar-password').value;
+    const error = document.getElementById('daftar-error');
+
+    if (!nama || !emel || !password) {
+        error.textContent = '⚠️ Sila isi semua maklumat!';
+        error.style.display = 'block';
+        return;
+    }
+    if (password.length < 4) {
+        error.textContent = '⚠️ Kata laluan perlu sekurang-kurangnya 4 aksara!';
+        error.style.display = 'block';
+        return;
+    }
+
+    const senaraiAkaun = muatAkaun();
+    const dahWujud = senaraiAkaun.find(a => a.emel === emel);
+    if (dahWujud) {
+        error.textContent = '⚠️ Emel ini sudah didaftarkan! Sila log masuk.';
+        error.style.display = 'block';
+        return;
+    }
+
+    senaraiAkaun.push({ nama, emel, password, role: roleDaftarSekarang });
+    simpanAkaun(senaraiAkaun);
+
+    error.style.display = 'none';
+    alert('✅ Akaun berjaya didaftarkan! Sila log masuk.');
+
+    document.getElementById('daftar-nama').value = '';
+    document.getElementById('daftar-email').value = '';
+    document.getElementById('daftar-password').value = '';
+    papar('login');
 }
 
 // ===== LOG MASUK =====
 function logMasuk() {
-    const emel = document.getElementById('login-email').value.trim();
+    const emel = document.getElementById('login-email').value.trim().toLowerCase();
     const password = document.getElementById('login-password').value;
     const error = document.getElementById('login-error');
-    const akaunDipilih = akaun[roleSekarang];
 
-    if (emel === akaunDipilih.emel && password === akaunDipilih.password) {
-        penggunaLogin = { ...akaunDipilih, roleKey: roleSekarang };
+    const senaraiAkaun = muatAkaun();
+    const akaunDijumpai = senaraiAkaun.find(a => a.emel === emel && a.password === password && a.role === roleSekarang);
+
+    if (akaunDijumpai) {
+        penggunaLogin = akaunDijumpai;
+        localStorage.setItem(KEY_SESI, JSON.stringify(akaunDijumpai));
         error.style.display = 'none';
         masukSistem();
     } else {
+        error.textContent = '⚠️ Emel, kata laluan, atau peranan tidak sepadan!';
         error.style.display = 'block';
     }
 }
@@ -55,14 +146,15 @@ function logMasuk() {
 // ===== MASUK SISTEM =====
 function masukSistem() {
     document.getElementById('halaman-login').style.display = 'none';
+    document.getElementById('halaman-daftar').style.display = 'none';
     document.getElementById('sistem-utama').style.display = 'flex';
+
     document.getElementById('user-name').textContent = penggunaLogin.nama;
-    document.getElementById('user-role').textContent = penggunaLogin.role;
-    document.getElementById('user-avatar').textContent = penggunaLogin.nama[0];
+    document.getElementById('user-role').textContent = penggunaLogin.role === 'sv' ? 'SV / Penyelia' : 'Pelajar LI';
+    document.getElementById('user-avatar').textContent = penggunaLogin.nama[0].toUpperCase();
     document.getElementById('selamat-datang').textContent = `Selamat datang, ${penggunaLogin.nama}!`;
 
-    // SV boleh beri tugasan, Pelajar boleh tambah laporan
-    if (penggunaLogin.roleKey === 'sv') {
+    if (penggunaLogin.role === 'sv') {
         document.getElementById('btn-tambah-tugasan').style.display = 'flex';
         document.getElementById('btn-tambah-laporan').style.display = 'none';
     } else {
@@ -79,19 +171,31 @@ function masukSistem() {
 function logKeluar() {
     if (!confirm('Adakah anda pasti mahu log keluar?')) return;
     penggunaLogin = null;
+    localStorage.removeItem(KEY_SESI);
     document.getElementById('halaman-login').style.display = 'flex';
     document.getElementById('sistem-utama').style.display = 'none';
     document.getElementById('login-email').value = '';
     document.getElementById('login-password').value = '';
-    // Reset nav
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     document.querySelector('.nav-item').classList.add('active');
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById('page-dashboard').classList.add('active');
 }
 
+// ===== SEMAK SESI SEDIA ADA (Auto Login) =====
+function semakSesi() {
+    const sesi = localStorage.getItem(KEY_SESI);
+    if (sesi) {
+        penggunaLogin = JSON.parse(sesi);
+        masukSistem();
+    }
+}
+
 // ===== NAVIGASI =====
 function setupNav() {
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.replaceWith(item.cloneNode(true)); // reset listener lama
+    });
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', function(e) {
             e.preventDefault();
@@ -118,7 +222,12 @@ function muatTugasan() {
     senarai.innerHTML = '';
     dashboard.innerHTML = '';
 
-    const senaraiFilt = filterAktif === 'semua' ? tugasan : tugasan.filter(t => t.status === filterAktif);
+    // Pelajar hanya nampak tugasan dia sendiri
+    let senaraiAsas = penggunaLogin.role === 'pelajar'
+        ? tugasan.filter(t => t.email === penggunaLogin.emel)
+        : tugasan;
+
+    const senaraiFilt = filterAktif === 'semua' ? senaraiAsas : senaraiAsas.filter(t => t.status === filterAktif);
 
     if (senaraiFilt.length === 0) {
         senarai.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted);">Tiada tugasan ditemui.</div>`;
@@ -129,11 +238,10 @@ function muatTugasan() {
         const reminderTag = (hariTinggal <= 3 && hariTinggal >= 0 && t.status !== 'selesai')
             ? `<div class="reminder-tag">⏰ ${hariTinggal} hari lagi untuk hantar!</div>` : '';
 
-        // Butang ikut role
         let butang = '';
-        if (penggunaLogin.roleKey === 'sv' && t.status !== 'selesai') {
+        if (penggunaLogin.role === 'sv' && t.status !== 'selesai') {
             butang = `<button class="btn-selesai" onclick="tandaSelesai(${t.id})">✅ Tandakan Selesai</button>`;
-        } else if (penggunaLogin.roleKey === 'pelajar' && t.status !== 'selesai') {
+        } else if (penggunaLogin.role === 'pelajar' && t.status !== 'selesai') {
             butang = `<button class="btn-kemaskini" onclick="bukaModalKemaskini(${t.id})">🔄 Kemaskini Status</button>`;
         }
 
@@ -150,7 +258,7 @@ function muatTugasan() {
         </div>`;
 
         senarai.innerHTML += html;
-        if (tugasan.indexOf(t) < 3) dashboard.innerHTML += html;
+        if (senaraiAsas.indexOf(t) < 3) dashboard.innerHTML += html;
     });
 
     kemaskiniStats();
@@ -170,7 +278,11 @@ function muatNotifikasi() {
     senarai.innerHTML = '';
     let bilanganNotif = 0;
 
-    tugasan.forEach(t => {
+    let senaraiAsas = penggunaLogin.role === 'pelajar'
+        ? tugasan.filter(t => t.email === penggunaLogin.emel)
+        : tugasan;
+
+    senaraiAsas.forEach(t => {
         const hariTinggal = hitungHari(t.tarikh);
         let warna = 'biru', teks = '', masa = '';
 
@@ -196,10 +308,7 @@ function muatNotifikasi() {
         senarai.innerHTML += `
         <div class="notif-card">
             <div class="notif-dot ${warna}"></div>
-            <div>
-                <div class="notif-title">${teks}</div>
-                <div class="notif-time">${masa}</div>
-            </div>
+            <div><div class="notif-title">${teks}</div><div class="notif-time">${masa}</div></div>
         </div>`;
     });
 
@@ -210,9 +319,13 @@ function muatNotifikasi() {
 
 // ===== MUAT LAPORAN =====
 function muatLaporan() {
-    const selesai = laporan.filter(l => l.status === 'selesai').length;
-    const proses = laporan.filter(l => l.status === 'proses').length;
-    const overdue = laporan.filter(l => l.status === 'overdue').length;
+    let senaraiAsas = penggunaLogin.role === 'pelajar'
+        ? laporan.filter(l => l.emailPelajar === penggunaLogin.emel)
+        : laporan;
+
+    const selesai = senaraiAsas.filter(l => l.status === 'selesai').length;
+    const proses = senaraiAsas.filter(l => l.status === 'proses').length;
+    const overdue = senaraiAsas.filter(l => l.status === 'overdue').length;
 
     document.getElementById('laporan-selesai').textContent = selesai;
     document.getElementById('laporan-proses').textContent = proses;
@@ -221,11 +334,11 @@ function muatLaporan() {
     const senarai = document.getElementById('senarai-laporan');
     senarai.innerHTML = '';
 
-    if (laporan.length === 0) {
+    if (senaraiAsas.length === 0) {
         senarai.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted);">Tiada laporan harian lagi.</div>`;
     }
 
-    laporan.forEach(l => {
+    senaraiAsas.slice().reverse().forEach(l => {
         senarai.innerHTML += `
         <div class="laporan-card ${l.status}">
             <div class="task-header">
@@ -237,14 +350,15 @@ function muatLaporan() {
         </div>`;
     });
 
-    const peratus = laporan.length > 0 ? Math.round((selesai / laporan.length) * 100) : 0;
+    const peratus = senaraiAsas.length > 0 ? Math.round((selesai / senaraiAsas.length) * 100) : 0;
     document.getElementById('teks-ringkasan').textContent =
-        `${overdue} overdue · ${proses} dalam proses · ${selesai} selesai · Kadar prestasi hari ini: ${peratus}%`;
+        `${overdue} overdue · ${proses} dalam proses · ${selesai} selesai · Kadar prestasi: ${peratus}%`;
 }
 
-// ===== TANDA SELESAI =====
+// ===== TANDA SELESAI (SV) =====
 function tandaSelesai(id) {
     tugasan = tugasan.map(t => t.id === id ? { ...t, status: 'selesai' } : t);
+    simpanTugasanData();
     muatSemua();
     alert('✅ Tugasan berjaya ditandakan selesai!');
 }
@@ -262,6 +376,7 @@ function simpanKemaskini() {
     const id = parseInt(document.getElementById('kemaskini-id').value);
     const status = document.getElementById('kemaskini-status').value;
     tugasan = tugasan.map(t => t.id === id ? { ...t, status } : t);
+    simpanTugasanData();
     tutupModal('modal-kemaskini');
     muatSemua();
     alert('✅ Status tugasan berjaya dikemaskini!');
@@ -274,7 +389,7 @@ function tambahTugasan() {
     const tajuk = document.getElementById('input-tajuk').value.trim();
     const tarikh = document.getElementById('input-tarikh').value;
     const pelajar = document.getElementById('input-pelajar').value.trim();
-    const emailPelajar = document.getElementById('input-email-pelajar').value.trim();
+    const emailPelajar = document.getElementById('input-email-pelajar').value.trim().toLowerCase();
     const reason = document.getElementById('input-reason').value.trim();
 
     if (!tajuk || !tarikh || !pelajar || !emailPelajar) {
@@ -283,11 +398,12 @@ function tambahTugasan() {
     }
 
     tugasan.push({
-        id: tugasan.length + 1,
+        id: Date.now(),
         tajuk, tarikh, pelajar,
         email: emailPelajar,
         reason, status: 'baharu'
     });
+    simpanTugasanData();
 
     hantarEmailTugasan(emailPelajar, pelajar, tajuk, tarikh, reason);
 
@@ -304,7 +420,6 @@ function tambahTugasan() {
 
 // ===== TAMBAH LAPORAN (PELAJAR) =====
 function bukaModalLaporan() {
-    // Set tarikh hari ini sebagai default
     document.getElementById('laporan-tarikh').value = new Date().toISOString().split('T')[0];
     bukaModal('modal-laporan');
 }
@@ -321,11 +436,13 @@ function tambahLaporan() {
     }
 
     laporan.push({
-        id: laporan.length + 1,
+        id: Date.now(),
         skop, tarikh,
         pelajar: penggunaLogin.nama,
+        emailPelajar: penggunaLogin.emel,
         status, catatan
     });
+    simpanLaporanData();
 
     document.getElementById('laporan-skop').value = '';
     document.getElementById('laporan-catatan').value = '';
@@ -390,8 +507,14 @@ function labelStatus(status) {
 }
 
 function kemaskiniStats() {
-    document.getElementById('stat-semua').textContent = tugasan.length;
-    document.getElementById('stat-overdue').textContent = tugasan.filter(t => t.status === 'overdue').length;
-    document.getElementById('stat-proses').textContent = tugasan.filter(t => t.status === 'proses').length;
-    document.getElementById('stat-selesai').textContent = tugasan.filter(t => t.status === 'selesai').length;
+    let senaraiAsas = penggunaLogin.role === 'pelajar'
+        ? tugasan.filter(t => t.email === penggunaLogin.emel)
+        : tugasan;
+    document.getElementById('stat-semua').textContent = senaraiAsas.length;
+    document.getElementById('stat-overdue').textContent = senaraiAsas.filter(t => t.status === 'overdue').length;
+    document.getElementById('stat-proses').textContent = senaraiAsas.filter(t => t.status === 'proses').length;
+    document.getElementById('stat-selesai').textContent = senaraiAsas.filter(t => t.status === 'selesai').length;
 }
+
+// ===== AUTO LOGIN BILA REFRESH =====
+semakSesi();

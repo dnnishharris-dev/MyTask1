@@ -27,11 +27,34 @@
         </div>
         <div id="login-error" class="login-error" style="display:none;">⚠️ Emel atau kata laluan salah!</div>
         <button class="btn-login" onclick="logMasuk()">Log Masuk</button>
-        <div class="login-hint">
-            <b>Akaun Demo:</b><br>
-            SV → sv@mytask.com / sv1234<br>
-            Pelajar → pelajar@mytask.com / pelajar1234
+        <p class="link-daftar">Belum ada akaun? <a href="#" onclick="papar('daftar')">Daftar di sini</a></p>
+    </div>
+</div>
+
+<!-- ===== HALAMAN DAFTAR ===== -->
+<div id="halaman-daftar" style="display:none;">
+    <div class="login-box">
+        <div class="login-logo">🗒️ MyTask</div>
+        <p class="login-sub">Daftar Akaun Baharu</p>
+        <div class="role-switch">
+            <button class="role-btn active" onclick="pilihRoleDaftar('sv', this)">👨‍🏫 SV / Penyelia</button>
+            <button class="role-btn" onclick="pilihRoleDaftar('pelajar', this)">🎓 Pelajar</button>
         </div>
+        <div class="form-group">
+            <label>Nama Penuh</label>
+            <input type="text" id="daftar-nama" placeholder="Nama penuh anda">
+        </div>
+        <div class="form-group">
+            <label>Emel</label>
+            <input type="email" id="daftar-email" placeholder="emel@gmail.com">
+        </div>
+        <div class="form-group">
+            <label>Kata Laluan</label>
+            <input type="password" id="daftar-password" placeholder="Sekurang-kurangnya 4 aksara">
+        </div>
+        <div id="daftar-error" class="login-error" style="display:none;"></div>
+        <button class="btn-login" onclick="daftarAkaun()">Daftar Akaun</button>
+        <p class="link-daftar">Dah ada akaun? <a href="#" onclick="papar('login')">Log masuk di sini</a></p>
     </div>
 </div>
 

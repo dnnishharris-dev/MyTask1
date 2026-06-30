@@ -174,3 +174,7 @@ nav { flex: 1; padding-top: 0.5rem; }
 .laporan-card.selesai { border-left-color: var(--hijau); }
 .laporan-card.proses { border-left-color: var(--kuning); }
 .laporan-card.overdue { border-left-color: var(--merah); }
+/* ===== LINK DAFTAR ===== */
+.link-daftar { text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 1rem; }
+.link-daftar a { color: var(--biru); text-decoration: none; font-weight: 500; }
+.link-daftar a:hover { text-decoration: underline; }

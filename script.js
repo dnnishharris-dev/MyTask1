@@ -410,6 +410,8 @@ async function simpanKemaskini() {
     await muatSemua();
     alert('✅ Status tugasan berjaya dikemaskini!');
 }
+// ===== BUKA MODAL TUGASAN (SV) =====
+function bukaModalTugasan() { bukaModal('modal-tugasan'); }
 
 // ===== COUNTER UNTUK SKOP ITEM =====
 let counterHarian = 1;

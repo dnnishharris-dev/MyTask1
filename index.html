@@ -28,6 +28,7 @@
         </div>
         <div id="login-error" class="login-error" style="display:none;">⚠️ Emel atau kata laluan salah!</div>
         <button class="btn-login" onclick="logMasuk()">Log Masuk</button>
+        <p class="link-daftar" style="margin-top:8px;"><a href="#" onclick="papar('lupa')">Lupa kata laluan?</a></p>
         <p class="link-daftar">Belum ada akaun? <a href="#" onclick="papar('daftar')">Daftar di sini</a></p>
     </div>
 </div>
@@ -55,7 +56,35 @@
         </div>
         <div id="daftar-error" class="login-error" style="display:none;"></div>
         <button class="btn-login" onclick="daftarAkaun()">Daftar Akaun</button>
-        <p class="link-daftar">Dah ada akaun? <a href="#" onclick="papar('login')">Log masuk di sini</a></p>
+        <p class="link-daftar">Sudah ada akaun? <a href="#" onclick="papar('login')">Log masuk di sini</a></p>
+    </div>
+</div>
+
+<!-- ===== HALAMAN LUPA KATA LALUAN ===== -->
+<div id="halaman-lupa" style="display:none;">
+    <div class="login-box">
+        <div class="login-logo">🗒️ MyTask</div>
+        <p class="login-sub">Tetapkan Semula Kata Laluan</p>
+
+        <div class="form-group">
+            <label>Emel Akaun Anda</label>
+            <input type="email" id="lupa-email" placeholder="emel@gmail.com">
+        </div>
+
+        <div id="lupa-error" class="login-error" style="display:none;"></div>
+        <div id="lupa-success" class="login-success" style="display:none;"></div>
+
+        <button class="btn-login" onclick="semakEmelLupa()">Semak Emel</button>
+
+        <div id="lupa-set-baru" style="display:none; margin-top:1rem;">
+            <div class="form-group">
+                <label>Kata Laluan Baharu</label>
+                <input type="password" id="lupa-password-baru" placeholder="Sekurang-kurangnya 4 aksara">
+            </div>
+            <button class="btn-login" onclick="tetapkanSemulaPassword()">Tetapkan Kata Laluan Baharu</button>
+        </div>
+
+        <p class="link-daftar">Ingat kata laluan? <a href="#" onclick="papar('login')">Log masuk di sini</a></p>
     </div>
 </div>
 
@@ -211,31 +240,35 @@
 
 <!-- MODAL: TAMBAH LAPORAN (PELAJAR) -->
 <div class="modal-overlay" id="modal-laporan">
-    <div class="modal">
+    <div class="modal" style="width:520px;">
         <div class="modal-header">
-            <h3>📋 Tambah Laporan Skop Kerja Harian</h3>
+            <h3>📋 Laporan Skop Kerja Harian</h3>
             <button class="modal-close" onclick="tutupModal('modal-laporan')">✕</button>
         </div>
-        <div class="form-group">
-            <label>Skop Kerja / Aktiviti Hari Ini</label>
-            <input type="text" id="laporan-skop" placeholder="Contoh: Bangunkan halaman login frontend">
-        </div>
+
         <div class="form-group">
             <label>Tarikh</label>
             <input type="date" id="laporan-tarikh">
         </div>
-        <div class="form-group">
-            <label>Status</label>
-            <select id="laporan-status">
-                <option value="selesai">✅ Selesai</option>
-                <option value="proses">🔄 Dalam Proses</option>
-                <option value="overdue">⚠️ Tidak Sempat</option>
-            </select>
+
+        <div class="laporan-section">
+            <div class="laporan-section-title">
+                🔁 Skop Kerja Harian
+                <span class="laporan-section-sub">Skop kerja harian</span>
+            </div>
+            <div id="senarai-skop-harian"></div>
+            <button class="btn-tambah-skop" onclick="tambahSkopHarian()">+ Tambah Skop Harian</button>
         </div>
-        <div class="form-group">
-            <label>Catatan Tambahan</label>
-            <textarea id="laporan-catatan" placeholder="Masukkan catatan, cabaran yang dihadapi, atau perkara yang perlu diikuti..."></textarea>
+
+        <div class="laporan-section">
+            <div class="laporan-section-title">
+                ➕ Task Tambahan
+                <span class="laporan-section-sub">Tugasan luar biasa hari ini</span>
+            </div>
+            <div id="senarai-skop-tambahan"></div>
+            <button class="btn-tambah-skop" onclick="tambahSkopTambahan()">+ Tambah Task Tambahan</button>
         </div>
+
         <div class="modal-footer">
             <button class="btn-primary" onclick="tambahLaporan()">✅ Hantar Laporan</button>
             <button class="btn-secondary" onclick="tutupModal('modal-laporan')">Batal</button>

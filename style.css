@@ -177,3 +177,132 @@ nav { flex: 1; padding-top: 0.5rem; }
 .link-daftar { text-align: center; font-size: 12px; color: var(--text-muted); margin-top: 1rem; }
 .link-daftar a { color: var(--biru); text-decoration: none; font-weight: 500; }
 .link-daftar a:hover { text-decoration: underline; }
+
+/* ===== MESEJ BERJAYA (LUPA KATA LALUAN) ===== */
+.login-success { background: #dcfce7; color: var(--hijau); font-size: 12px; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; }
+
+/* ===== LAPORAN HARIAN BAHARU ===== */
+.laporan-section {
+    background: var(--surface2);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+.laporan-section-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.laporan-section-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+.skop-item {
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 0.75rem;
+    margin-bottom: 8px;
+    border: 0.5px solid var(--border);
+}
+.skop-item-header {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.skop-input {
+    flex: 1;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    background: var(--surface);
+    color: var(--text-primary);
+    outline: none;
+}
+.skop-input:focus { border-color: var(--biru); }
+.skop-status {
+    padding: 7px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 11px;
+    background: var(--surface);
+    color: var(--text-primary);
+    outline: none;
+    cursor: pointer;
+}
+.btn-hapus-skop {
+    background: #fee2e2;
+    color: var(--merah);
+    border: none;
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.btn-hapus-skop:hover { background: var(--merah); color: #fff; }
+.skop-reason-wrap {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.skop-reason-pilihan {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 11px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    outline: none;
+    cursor: pointer;
+}
+.skop-reason-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 11px;
+    background: var(--surface);
+    color: var(--text-primary);
+    outline: none;
+}
+.skop-reason-input:focus { border-color: var(--biru); }
+.btn-tambah-skop {
+    width: 100%;
+    padding: 7px;
+    background: transparent;
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    cursor: pointer;
+    margin-top: 4px;
+}
+.btn-tambah-skop:hover { background: var(--surface); color: var(--biru); border-color: var(--biru); }
+
+/* ===== PAPARAN LAPORAN ===== */
+.laporan-group-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 1rem 0 0.5rem;
+}
+.reason-tag {
+    display: inline-block;
+    font-size: 11px;
+    background: #fef3c7;
+    color: #d97706;
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-top: 5px;
+}

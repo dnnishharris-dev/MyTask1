@@ -413,6 +413,38 @@ async function simpanKemaskini() {
 // ===== BUKA MODAL TUGASAN (SV) =====
 function bukaModalTugasan() { bukaModal('modal-tugasan'); }
 
+// ===== TAMBAH TUGASAN (SV) =====
+async function tambahTugasan() {
+    const tajuk = document.getElementById('input-tajuk').value.trim();
+    const tarikh = document.getElementById('input-tarikh').value;
+    const pelajar = document.getElementById('input-pelajar').value.trim();
+    const emailPelajar = document.getElementById('input-email-pelajar').value.trim().toLowerCase();
+    const reason = document.getElementById('input-reason').value.trim();
+
+    if (!tajuk || !tarikh || !pelajar || !emailPelajar) {
+        alert('⚠️ Sila isi semua maklumat yang diperlukan!');
+        return;
+    }
+
+    const { error } = await sb.from('tugasan').insert({
+        tajuk, tarikh, pelajar, email: emailPelajar, reason, status: 'baharu'
+    });
+
+    if (error) { alert('❌ Ralat: ' + error.message); return; }
+
+    hantarEmailTugasan(emailPelajar, pelajar, tajuk, tarikh, reason);
+
+    document.getElementById('input-tajuk').value = '';
+    document.getElementById('input-tarikh').value = '';
+    document.getElementById('input-pelajar').value = '';
+    document.getElementById('input-email-pelajar').value = '';
+    document.getElementById('input-reason').value = '';
+
+    tutupModal('modal-tugasan');
+    await muatSemua();
+    alert('✅ Tugasan berjaya dihantar kepada pelajar!');
+}
+
 // ===== COUNTER UNTUK SKOP ITEM =====
 let counterHarian = 1;
 let counterTambahan = 1;

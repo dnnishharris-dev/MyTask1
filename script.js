@@ -312,13 +312,19 @@ function muatLaporan() {
         ? laporan.filter(l => l.email_pelajar === penggunaLogin.emel)
         : laporan;
 
-    const selesai = senaraiAsas.filter(l => l.status === 'selesai').length;
-    const proses = senaraiAsas.filter(l => l.status === 'proses').length;
-    const overdue = senaraiAsas.filter(l => l.status === 'overdue').length;
+    let totalSelesai = 0, totalProses = 0, totalOverdue = 0;
+    senaraiAsas.forEach(l => {
+        const semua = [...(l.skop_harian || []), ...(l.skop_tambahan || [])];
+        semua.forEach(s => {
+            if (s.status === 'selesai') totalSelesai++;
+            else if (s.status === 'proses') totalProses++;
+            else if (s.status === 'overdue') totalOverdue++;
+        });
+    });
 
-    document.getElementById('laporan-selesai').textContent = selesai;
-    document.getElementById('laporan-proses').textContent = proses;
-    document.getElementById('laporan-overdue').textContent = overdue;
+    document.getElementById('laporan-selesai').textContent = totalSelesai;
+    document.getElementById('laporan-proses').textContent = totalProses;
+    document.getElementById('laporan-overdue').textContent = totalOverdue;
 
     const senarai = document.getElementById('senarai-laporan');
     senarai.innerHTML = '';
@@ -327,21 +333,53 @@ function muatLaporan() {
         senarai.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted);">Tiada laporan harian lagi.</div>`;
     }
 
-    senaraiAsas.forEach(l => {
+    senaraiAsas.slice().reverse().forEach(l => {
+        let htmlSkopHarian = '';
+        let htmlSkopTambahan = '';
+
+        if (l.skop_harian && l.skop_harian.length > 0) {
+            htmlSkopHarian = `<div class="laporan-group-title">🔁 Skop Kerja Harian</div>`;
+            l.skop_harian.forEach(s => {
+                htmlSkopHarian += `
+                <div class="laporan-card ${s.status}" style="margin-bottom:6px;">
+                    <div class="task-header">
+                        <div class="task-title" style="font-size:13px;">${s.tajuk}</div>
+                        <span class="pill ${s.status}">${labelStatus(s.status)}</span>
+                    </div>
+                    ${s.reason ? `<div class="reason-tag">💬 ${s.reason}</div>` : ''}
+                </div>`;
+            });
+        }
+
+        if (l.skop_tambahan && l.skop_tambahan.length > 0) {
+            htmlSkopTambahan = `<div class="laporan-group-title">➕ Task Tambahan</div>`;
+            l.skop_tambahan.forEach(s => {
+                htmlSkopTambahan += `
+                <div class="laporan-card ${s.status}" style="margin-bottom:6px;">
+                    <div class="task-header">
+                        <div class="task-title" style="font-size:13px;">${s.tajuk}</div>
+                        <span class="pill ${s.status}">${labelStatus(s.status)}</span>
+                    </div>
+                    ${s.reason ? `<div class="reason-tag">💬 ${s.reason}</div>` : ''}
+                </div>`;
+            });
+        }
+
         senarai.innerHTML += `
-        <div class="laporan-card ${l.status}">
-            <div class="task-header">
-                <div class="task-title">${l.skop}</div>
-                <span class="pill ${l.status}">${labelStatus(l.status)}</span>
+        <div class="laporan-card selesai" style="margin-bottom:12px;">
+            <div class="task-header" style="margin-bottom:8px;">
+                <div class="task-title">📅 ${formatTarikh(l.tarikh)}</div>
+                <span style="font-size:11px;color:var(--text-muted);">👤 ${l.pelajar}</span>
             </div>
-            <div class="task-meta">📅 ${formatTarikh(l.tarikh)} &nbsp;|&nbsp; 👤 ${l.pelajar}</div>
-            ${l.catatan ? `<div class="catatan-box">📝 ${l.catatan}</div>` : ''}
+            ${htmlSkopHarian}
+            ${htmlSkopTambahan}
         </div>`;
     });
 
-    const peratus = senaraiAsas.length > 0 ? Math.round((selesai / senaraiAsas.length) * 100) : 0;
+    const total = totalSelesai + totalProses + totalOverdue;
+    const peratus = total > 0 ? Math.round((totalSelesai / total) * 100) : 0;
     document.getElementById('teks-ringkasan').textContent =
-        `${overdue} overdue · ${proses} dalam proses · ${selesai} selesai · Kadar prestasi: ${peratus}%`;
+        `${totalOverdue} tidak sempat · ${totalProses} dalam proses · ${totalSelesai} selesai · Kadar prestasi: ${peratus}%`;
 }
 
 // ===== TANDA SELESAI (SV) =====
@@ -408,33 +446,30 @@ async function tambahTugasan() {
 }
 
 // ===== TAMBAH LAPORAN (PELAJAR) =====
-function bukaModalLaporan() {
-    document.getElementById('laporan-tarikh').value = new Date().toISOString().split('T')[0];
-    bukaModal('modal-laporan');
-}
-
 async function tambahLaporan() {
-    const skop = document.getElementById('laporan-skop').value.trim();
     const tarikh = document.getElementById('laporan-tarikh').value;
-    const status = document.getElementById('laporan-status').value;
-    const catatan = document.getElementById('laporan-catatan').value.trim();
+    if (!tarikh) {
+        alert('⚠️ Sila pilih tarikh!');
+        return;
+    }
 
-    if (!skop || !tarikh) {
-        alert('⚠️ Sila isi skop kerja dan tarikh!');
+    const skopHarian = kumpulSkop('harian');
+    const skopTambahan = kumpulSkop('tambahan');
+
+    if (skopHarian.length === 0 && skopTambahan.length === 0) {
+        alert('⚠️ Sila isi sekurang-kurangnya satu skop kerja!');
         return;
     }
 
     const { error } = await sb.from('laporan').insert({
-        skop, tarikh,
+        tarikh,
         pelajar: penggunaLogin.nama,
         email_pelajar: penggunaLogin.emel,
-        status, catatan
+        skop_harian: skopHarian,
+        skop_tambahan: skopTambahan
     });
 
     if (error) { alert('❌ Ralat: ' + error.message); return; }
-
-    document.getElementById('laporan-skop').value = '';
-    document.getElementById('laporan-catatan').value = '';
 
     tutupModal('modal-laporan');
     await ambilLaporanDB();

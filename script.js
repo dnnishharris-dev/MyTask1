@@ -411,38 +411,103 @@ async function simpanKemaskini() {
     alert('✅ Status tugasan berjaya dikemaskini!');
 }
 
-// ===== TAMBAH TUGASAN (SV) =====
-function bukaModalTugasan() { bukaModal('modal-tugasan'); }
+// ===== COUNTER UNTUK SKOP ITEM =====
+let counterHarian = 1;
+let counterTambahan = 1;
 
-async function tambahTugasan() {
-    const tajuk = document.getElementById('input-tajuk').value.trim();
-    const tarikh = document.getElementById('input-tarikh').value;
-    const pelajar = document.getElementById('input-pelajar').value.trim();
-    const emailPelajar = document.getElementById('input-email-pelajar').value.trim().toLowerCase();
-    const reason = document.getElementById('input-reason').value.trim();
+// ===== BUKA MODAL LAPORAN =====
+function bukaModalLaporan() {
+    document.getElementById('laporan-tarikh').value = new Date().toISOString().split('T')[0];
 
-    if (!tajuk || !tarikh || !pelajar || !emailPelajar) {
-        alert('⚠️ Sila isi semua maklumat yang diperlukan!');
-        return;
+    counterHarian = 1;
+    counterTambahan = 1;
+    document.getElementById('senarai-skop-harian').innerHTML = buatSkopItem('harian', 1);
+    document.getElementById('senarai-skop-tambahan').innerHTML = buatSkopItem('tambahan', 1);
+
+    bukaModal('modal-laporan');
+}
+
+// ===== BUAT SKOP ITEM HTML =====
+function buatSkopItem(jenis, nombor) {
+    const prefix = jenis === 'harian' ? 'h' : 't';
+    return `
+    <div class="skop-item" id="skop-${jenis}-${nombor}">
+        <div class="skop-item-header">
+            <input type="text" class="skop-input" placeholder="${jenis === 'harian' ? 'Contoh: Semak dan balas emel' : 'Contoh: Bantu setup server baharu'}" id="skop-${prefix}-tajuk-${nombor}">
+            <select class="skop-status" id="skop-${prefix}-status-${nombor}">
+                <option value="selesai">✅ Selesai</option>
+                <option value="proses">🔄 Dalam Proses</option>
+                <option value="overdue">⚠️ Tidak Sempat</option>
+            </select>
+            <button class="btn-hapus-skop" onclick="hapusSkop('skop-${jenis}-${nombor}')">✕</button>
+        </div>
+        <div class="skop-reason-wrap">
+            <select class="skop-reason-pilihan" onchange="pilihanReason(this, 'skop-${prefix}-reason-${nombor}')">
+                <option value="">— Tiada Reason —</option>
+                <option value="Belum siap">Belum Siap</option>
+                <option value="Tidak sihat">Tidak Sihat</option>
+                <option value="Emergency Leave (EL)">Emergency Leave (EL)</option>
+                <option value="lain">Lain-lain (taip sendiri)</option>
+            </select>
+            <input type="text" class="skop-reason-input" id="skop-${prefix}-reason-${nombor}" placeholder="Taip reason anda..." style="display:none;">
+        </div>
+    </div>`;
+}
+
+// ===== TAMBAH SKOP HARIAN =====
+function tambahSkopHarian() {
+    counterHarian++;
+    document.getElementById('senarai-skop-harian').innerHTML += buatSkopItem('harian', counterHarian);
+}
+
+// ===== TAMBAH SKOP TAMBAHAN =====
+function tambahSkopTambahan() {
+    counterTambahan++;
+    document.getElementById('senarai-skop-tambahan').innerHTML += buatSkopItem('tambahan', counterTambahan);
+}
+
+// ===== HAPUS SKOP ITEM =====
+function hapusSkop(id) {
+    const el = document.getElementById(id);
+    if (el) el.remove();
+}
+
+// ===== PILIHAN REASON =====
+function pilihanReason(select, inputId) {
+    const input = document.getElementById(inputId);
+    if (select.value === 'lain') {
+        input.style.display = 'block';
+        input.focus();
+    } else {
+        input.style.display = 'none';
+        input.value = '';
     }
+}
 
-    const { error } = await sb.from('tugasan').insert({
-        tajuk, tarikh, pelajar, email: emailPelajar, reason, status: 'baharu'
+// ===== KUMPUL DATA SKOP =====
+function kumpulSkop(jenis) {
+    const prefix = jenis === 'harian' ? 'h' : 't';
+    const container = document.getElementById(`senarai-skop-${jenis}`);
+    const items = container.querySelectorAll('.skop-item');
+    const hasil = [];
+
+    items.forEach(item => {
+        const id = item.id.replace(`skop-${jenis}-`, '');
+        const tajuk = document.getElementById(`skop-${prefix}-tajuk-${id}`)?.value.trim();
+        const status = document.getElementById(`skop-${prefix}-status-${id}`)?.value;
+        const reasonPilihan = item.querySelector('.skop-reason-pilihan')?.value;
+        const reasonInput = item.querySelector('.skop-reason-input')?.value.trim();
+
+        if (!tajuk) return;
+
+        let reason = '';
+        if (reasonPilihan === 'lain') reason = reasonInput;
+        else reason = reasonPilihan;
+
+        hasil.push({ tajuk, status, reason });
     });
 
-    if (error) { alert('❌ Ralat: ' + error.message); return; }
-
-    hantarEmailTugasan(emailPelajar, pelajar, tajuk, tarikh, reason);
-
-    document.getElementById('input-tajuk').value = '';
-    document.getElementById('input-tarikh').value = '';
-    document.getElementById('input-pelajar').value = '';
-    document.getElementById('input-email-pelajar').value = '';
-    document.getElementById('input-reason').value = '';
-
-    tutupModal('modal-tugasan');
-    await muatSemua();
-    alert('✅ Tugasan berjaya dihantar kepada pelajar!');
+    return hasil;
 }
 
 // ===== TAMBAH LAPORAN (PELAJAR) =====

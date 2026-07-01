@@ -1,7 +1,7 @@
 // ===== SUPABASE SETUP =====
 const SUPABASE_URL = 'https://mrktydgpseajqaitpalb.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ya3R5ZGdwc2VhanFhaXRwYWxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NjE0ODYsImV4cCI6MjA5ODQzNzQ4Nn0.80PVgA1lgzEIqD5slgF8D9iLRjWlZrXb-CPvkZn2QxY';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const KEY_SESI = 'mytask_sesi';
 
@@ -11,7 +11,6 @@ let penggunaLogin = null;
 let filterAktif = 'semua';
 let modGelap = false;
 
-// Data disimpan dalam memory selepas fetch dari Supabase
 let tugasan = [];
 let laporan = [];
 
@@ -68,15 +67,14 @@ async function daftarAkaun() {
         return;
     }
 
-    // Semak emel dah wujud atau tidak
-    const { data: existing } = await supabase.from('akaun').select('id').eq('emel', emel).maybeSingle();
+    const { data: existing } = await sb.from('akaun').select('id').eq('emel', emel).maybeSingle();
     if (existing) {
         error.textContent = '⚠️ Emel ini sudah didaftarkan! Sila log masuk.';
         error.style.display = 'block';
         return;
     }
 
-    const { error: insertError } = await supabase.from('akaun').insert({
+    const { error: insertError } = await sb.from('akaun').insert({
         nama, emel, password, role: roleDaftarSekarang
     });
 
@@ -101,7 +99,7 @@ async function logMasuk() {
     const password = document.getElementById('login-password').value;
     const error = document.getElementById('login-error');
 
-    const { data: akaunDijumpai, error: fetchError } = await supabase
+    const { data: akaunDijumpai, error: fetchError } = await sb
         .from('akaun')
         .select('*')
         .eq('emel', emel)
@@ -197,13 +195,13 @@ async function muatSemua() {
 
 // ===== AMBIL TUGASAN DARI SUPABASE =====
 async function ambilTugasanDB() {
-    const { data, error } = await supabase.from('tugasan').select('*').order('tarikh', { ascending: true });
+    const { data, error } = await sb.from('tugasan').select('*').order('tarikh', { ascending: true });
     if (!error) tugasan = data || [];
 }
 
 // ===== AMBIL LAPORAN DARI SUPABASE =====
 async function ambilLaporanDB() {
-    const { data, error } = await supabase.from('laporan').select('*').order('created_at', { ascending: false });
+    const { data, error } = await sb.from('laporan').select('*').order('created_at', { ascending: false });
     if (!error) laporan = data || [];
 }
 
@@ -348,7 +346,7 @@ function muatLaporan() {
 
 // ===== TANDA SELESAI (SV) =====
 async function tandaSelesai(id) {
-    const { error } = await supabase.from('tugasan').update({ status: 'selesai' }).eq('id', id);
+    const { error } = await sb.from('tugasan').update({ status: 'selesai' }).eq('id', id);
     if (error) { alert('❌ Ralat: ' + error.message); return; }
     await muatSemua();
     alert('✅ Tugasan berjaya ditandakan selesai!');
@@ -367,7 +365,7 @@ async function simpanKemaskini() {
     const id = parseInt(document.getElementById('kemaskini-id').value);
     const status = document.getElementById('kemaskini-status').value;
 
-    const { error } = await supabase.from('tugasan').update({ status }).eq('id', id);
+    const { error } = await sb.from('tugasan').update({ status }).eq('id', id);
     if (error) { alert('❌ Ralat: ' + error.message); return; }
 
     tutupModal('modal-kemaskini');
@@ -390,7 +388,7 @@ async function tambahTugasan() {
         return;
     }
 
-    const { error } = await supabase.from('tugasan').insert({
+    const { error } = await sb.from('tugasan').insert({
         tajuk, tarikh, pelajar, email: emailPelajar, reason, status: 'baharu'
     });
 
@@ -426,7 +424,7 @@ async function tambahLaporan() {
         return;
     }
 
-    const { error } = await supabase.from('laporan').insert({
+    const { error } = await sb.from('laporan').insert({
         skop, tarikh,
         pelajar: penggunaLogin.nama,
         email_pelajar: penggunaLogin.emel,
@@ -500,7 +498,7 @@ async function semakEmelLupa() {
         return;
     }
 
-    const { data: akaunDijumpai } = await supabase.from('akaun').select('*').eq('emel', emel).maybeSingle();
+    const { data: akaunDijumpai } = await sb.from('akaun').select('*').eq('emel', emel).maybeSingle();
 
     if (!akaunDijumpai) {
         error.textContent = '⚠️ Emel ini tidak didaftarkan dalam sistem!';
@@ -527,7 +525,7 @@ async function tetapkanSemulaPassword() {
         return;
     }
 
-    const { error: updateError } = await supabase.from('akaun').update({ password: passwordBaru }).eq('emel', emelLupaSemasa);
+    const { error: updateError } = await sb.from('akaun').update({ password: passwordBaru }).eq('emel', emelLupaSemasa);
     if (updateError) { error.textContent = '⚠️ Ralat: ' + updateError.message; error.style.display = 'block'; return; }
 
     error.style.display = 'none';

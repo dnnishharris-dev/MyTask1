@@ -336,10 +336,14 @@ function muatLaporan() {
     senaraiAsas.slice().reverse().forEach(l => {
         let htmlSkopHarian = '';
         let htmlSkopTambahan = '';
+        const bolehEdit = penggunaLogin.role === 'pelajar' && l.email_pelajar === penggunaLogin.emel;
 
         if (l.skop_harian && l.skop_harian.length > 0) {
             htmlSkopHarian = `<div class="laporan-group-title">🔁 Skop Kerja Harian</div>`;
-            l.skop_harian.forEach(s => {
+            l.skop_harian.forEach((s, idx) => {
+                const btnUpdate = (bolehEdit && s.status !== 'selesai')
+                    ? `<button class="btn-selesai" style="margin-top:6px;font-size:11px;padding:4px 10px;" onclick="tandaSkopSelesai(${l.id}, 'skop_harian', ${idx})">✅ Tandakan Selesai</button>`
+                    : '';
                 htmlSkopHarian += `
                 <div class="laporan-card ${s.status}" style="margin-bottom:6px;">
                     <div class="task-header">
@@ -347,13 +351,17 @@ function muatLaporan() {
                         <span class="pill ${s.status}">${labelStatus(s.status)}</span>
                     </div>
                     ${s.reason ? `<div class="reason-tag">💬 ${s.reason}</div>` : ''}
+                    ${btnUpdate}
                 </div>`;
             });
         }
 
         if (l.skop_tambahan && l.skop_tambahan.length > 0) {
             htmlSkopTambahan = `<div class="laporan-group-title">➕ Task Tambahan</div>`;
-            l.skop_tambahan.forEach(s => {
+            l.skop_tambahan.forEach((s, idx) => {
+                const btnUpdate = (bolehEdit && s.status !== 'selesai')
+                    ? `<button class="btn-selesai" style="margin-top:6px;font-size:11px;padding:4px 10px;" onclick="tandaSkopSelesai(${l.id}, 'skop_tambahan', ${idx})">✅ Tandakan Selesai</button>`
+                    : '';
                 htmlSkopTambahan += `
                 <div class="laporan-card ${s.status}" style="margin-bottom:6px;">
                     <div class="task-header">
@@ -361,6 +369,7 @@ function muatLaporan() {
                         <span class="pill ${s.status}">${labelStatus(s.status)}</span>
                     </div>
                     ${s.reason ? `<div class="reason-tag">💬 ${s.reason}</div>` : ''}
+                    ${btnUpdate}
                 </div>`;
             });
         }
@@ -380,6 +389,22 @@ function muatLaporan() {
     const peratus = total > 0 ? Math.round((totalSelesai / total) * 100) : 0;
     document.getElementById('teks-ringkasan').textContent =
         `${totalOverdue} tidak sempat · ${totalProses} dalam proses · ${totalSelesai} selesai · Kadar prestasi: ${peratus}%`;
+}
+
+// ===== TANDA SKOP LAPORAN SELESAI (PELAJAR) =====
+async function tandaSkopSelesai(laporanId, jenisSkop, index) {
+    const l = laporan.find(lap => lap.id === laporanId);
+    if (!l) return;
+
+    const senaraiSkop = [...l[jenisSkop]];
+    senaraiSkop[index] = { ...senaraiSkop[index], status: 'selesai' };
+
+    const { error } = await sb.from('laporan').update({ [jenisSkop]: senaraiSkop }).eq('id', laporanId);
+    if (error) { alert('❌ Ralat: ' + error.message); return; }
+
+    await ambilLaporanDB();
+    muatLaporan();
+    alert('✅ Status skop kerja berjaya dikemaskini!');
 }
 
 // ===== TANDA SELESAI (SV) =====

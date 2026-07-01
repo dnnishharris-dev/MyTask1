@@ -1,7 +1,8 @@
-// ===== STORAGE KEYS =====
-const KEY_AKAUN = 'mytask_akaun';
-const KEY_TUGASAN = 'mytask_tugasan';
-const KEY_LAPORAN = 'mytask_laporan';
+// ===== SUPABASE SETUP =====
+const SUPABASE_URL = 'https://mrktydgpseajqaitpalb.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ya3R5ZGdwc2VhanFhaXRwYWxiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI4NjE0ODYsImV4cCI6MjA5ODQzNzQ4Nn0.80PVgA1lgzEIqD5slgF8D9iLRjWlZrXb-CPvkZn2QxY';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 const KEY_SESI = 'mytask_sesi';
 
 let roleSekarang = 'sv';
@@ -10,58 +11,23 @@ let penggunaLogin = null;
 let filterAktif = 'semua';
 let modGelap = false;
 
-// ===== MUAT DATA DARI LOCALSTORAGE =====
-function muatAkaun() {
-    const data = localStorage.getItem(KEY_AKAUN);
-    if (data) return JSON.parse(data);
+// Data disimpan dalam memory selepas fetch dari Supabase
+let tugasan = [];
+let laporan = [];
 
-    // Akaun demo default (kali pertama sahaja)
-    const default_akaun = [
-        { nama: 'Harris Danish', emel: 'sv@mytask.com', password: 'sv1234', role: 'sv' },
-        { nama: 'Ahmad Faris', emel: 'pelajar@mytask.com', password: 'pelajar1234', role: 'pelajar' }
-    ];
-    localStorage.setItem(KEY_AKAUN, JSON.stringify(default_akaun));
-    return default_akaun;
-}
-
-function simpanAkaun(senarai) {
-    localStorage.setItem(KEY_AKAUN, JSON.stringify(senarai));
-}
-
-function muatTugasanData() {
-    const data = localStorage.getItem(KEY_TUGASAN);
-    if (data) return JSON.parse(data);
-    const default_tugasan = [
-        { id: 1, tajuk: 'Hantar Laporan Minggu 4', tarikh: '2026-06-20', pelajar: 'Ahmad Faris', email: 'pelajar@mytask.com', reason: 'Laporan minggu 4 perlu diserahkan segera.', status: 'overdue' },
-        { id: 2, tajuk: 'Dokumentasi API Backend', tarikh: '2026-06-30', pelajar: 'Ahmad Faris', email: 'pelajar@mytask.com', reason: 'Pastikan semua endpoint didokumentasikan.', status: 'proses' }
-    ];
-    localStorage.setItem(KEY_TUGASAN, JSON.stringify(default_tugasan));
-    return default_tugasan;
-}
-
-function simpanTugasanData() {
-    localStorage.setItem(KEY_TUGASAN, JSON.stringify(tugasan));
-}
-
-function muatLaporanData() {
-    const data = localStorage.getItem(KEY_LAPORAN);
-    if (data) return JSON.parse(data);
-    localStorage.setItem(KEY_LAPORAN, JSON.stringify([]));
-    return [];
-}
-
-function simpanLaporanData() {
-    localStorage.setItem(KEY_LAPORAN, JSON.stringify(laporan));
-}
-
-// ===== DATA UTAMA =====
-let tugasan = muatTugasanData();
-let laporan = muatLaporanData();
-
-// ===== TUKAR HALAMAN LOGIN/DAFTAR =====
+// ===== TUKAR HALAMAN LOGIN/DAFTAR/LUPA =====
 function papar(halaman) {
     document.getElementById('halaman-login').style.display = halaman === 'login' ? 'flex' : 'none';
     document.getElementById('halaman-daftar').style.display = halaman === 'daftar' ? 'flex' : 'none';
+    document.getElementById('halaman-lupa').style.display = halaman === 'lupa' ? 'flex' : 'none';
+
+    if (halaman === 'lupa') {
+        document.getElementById('lupa-email').value = '';
+        document.getElementById('lupa-password-baru').value = '';
+        document.getElementById('lupa-error').style.display = 'none';
+        document.getElementById('lupa-success').style.display = 'none';
+        document.getElementById('lupa-set-baru').style.display = 'none';
+    }
 }
 
 // ===== DARK MODE =====
@@ -71,22 +37,21 @@ function toggelMode() {
     document.getElementById('btn-mode').textContent = modGelap ? '☀️ Light Mode' : '🌙 Dark Mode';
 }
 
-// ===== PILIH ROLE LOGIN =====
+// ===== PILIH ROLE =====
 function pilihRole(role, el) {
     roleSekarang = role;
     el.parentElement.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
     el.classList.add('active');
 }
 
-// ===== PILIH ROLE DAFTAR =====
 function pilihRoleDaftar(role, el) {
     roleDaftarSekarang = role;
     el.parentElement.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
     el.classList.add('active');
 }
 
-// ===== DAFTAR AKAUN BAHARU =====
-function daftarAkaun() {
+// ===== DAFTAR AKAUN BAHARU (SUPABASE) =====
+async function daftarAkaun() {
     const nama = document.getElementById('daftar-nama').value.trim();
     const emel = document.getElementById('daftar-email').value.trim().toLowerCase();
     const password = document.getElementById('daftar-password').value;
@@ -103,16 +68,23 @@ function daftarAkaun() {
         return;
     }
 
-    const senaraiAkaun = muatAkaun();
-    const dahWujud = senaraiAkaun.find(a => a.emel === emel);
-    if (dahWujud) {
+    // Semak emel dah wujud atau tidak
+    const { data: existing } = await supabase.from('akaun').select('id').eq('emel', emel).maybeSingle();
+    if (existing) {
         error.textContent = '⚠️ Emel ini sudah didaftarkan! Sila log masuk.';
         error.style.display = 'block';
         return;
     }
 
-    senaraiAkaun.push({ nama, emel, password, role: roleDaftarSekarang });
-    simpanAkaun(senaraiAkaun);
+    const { error: insertError } = await supabase.from('akaun').insert({
+        nama, emel, password, role: roleDaftarSekarang
+    });
+
+    if (insertError) {
+        error.textContent = '⚠️ Ralat pendaftaran: ' + insertError.message;
+        error.style.display = 'block';
+        return;
+    }
 
     error.style.display = 'none';
     alert('✅ Akaun berjaya didaftarkan! Sila log masuk.');
@@ -123,28 +95,34 @@ function daftarAkaun() {
     papar('login');
 }
 
-// ===== LOG MASUK =====
-function logMasuk() {
+// ===== LOG MASUK (SUPABASE) =====
+async function logMasuk() {
     const emel = document.getElementById('login-email').value.trim().toLowerCase();
     const password = document.getElementById('login-password').value;
     const error = document.getElementById('login-error');
 
-    const senaraiAkaun = muatAkaun();
-    const akaunDijumpai = senaraiAkaun.find(a => a.emel === emel && a.password === password && a.role === roleSekarang);
+    const { data: akaunDijumpai, error: fetchError } = await supabase
+        .from('akaun')
+        .select('*')
+        .eq('emel', emel)
+        .eq('password', password)
+        .eq('role', roleSekarang)
+        .maybeSingle();
 
-    if (akaunDijumpai) {
-        penggunaLogin = akaunDijumpai;
-        localStorage.setItem(KEY_SESI, JSON.stringify(akaunDijumpai));
-        error.style.display = 'none';
-        masukSistem();
-    } else {
+    if (fetchError || !akaunDijumpai) {
         error.textContent = '⚠️ Emel, kata laluan, atau peranan tidak sepadan!';
         error.style.display = 'block';
+        return;
     }
+
+    penggunaLogin = akaunDijumpai;
+    localStorage.setItem(KEY_SESI, JSON.stringify(akaunDijumpai));
+    error.style.display = 'none';
+    masukSistem();
 }
 
 // ===== MASUK SISTEM =====
-function masukSistem() {
+async function masukSistem() {
     document.getElementById('halaman-login').style.display = 'none';
     document.getElementById('halaman-daftar').style.display = 'none';
     document.getElementById('sistem-utama').style.display = 'flex';
@@ -163,7 +141,7 @@ function masukSistem() {
     }
 
     setupNav();
-    muatSemua();
+    await muatSemua();
     semakReminder();
 }
 
@@ -183,18 +161,18 @@ function logKeluar() {
 }
 
 // ===== SEMAK SESI SEDIA ADA (Auto Login) =====
-function semakSesi() {
+async function semakSesi() {
     const sesi = localStorage.getItem(KEY_SESI);
     if (sesi) {
         penggunaLogin = JSON.parse(sesi);
-        masukSistem();
+        await masukSistem();
     }
 }
 
 // ===== NAVIGASI =====
 function setupNav() {
     document.querySelectorAll('.nav-item').forEach(item => {
-        item.replaceWith(item.cloneNode(true)); // reset listener lama
+        item.replaceWith(item.cloneNode(true));
     });
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', function(e) {
@@ -207,22 +185,35 @@ function setupNav() {
     });
 }
 
-// ===== MUAT SEMUA =====
-function muatSemua() {
+// ===== MUAT SEMUA DARI SUPABASE =====
+async function muatSemua() {
+    await ambilTugasanDB();
+    await ambilLaporanDB();
     muatTugasan();
     muatNotifikasi();
     muatLaporan();
     kemaskiniStats();
 }
 
-// ===== MUAT TUGASAN =====
+// ===== AMBIL TUGASAN DARI SUPABASE =====
+async function ambilTugasanDB() {
+    const { data, error } = await supabase.from('tugasan').select('*').order('tarikh', { ascending: true });
+    if (!error) tugasan = data || [];
+}
+
+// ===== AMBIL LAPORAN DARI SUPABASE =====
+async function ambilLaporanDB() {
+    const { data, error } = await supabase.from('laporan').select('*').order('created_at', { ascending: false });
+    if (!error) laporan = data || [];
+}
+
+// ===== MUAT TUGASAN (RENDER) =====
 function muatTugasan() {
     const senarai = document.getElementById('senarai-tugasan');
     const dashboard = document.getElementById('dashboard-tugasan');
     senarai.innerHTML = '';
     dashboard.innerHTML = '';
 
-    // Pelajar hanya nampak tugasan dia sendiri
     let senaraiAsas = penggunaLogin.role === 'pelajar'
         ? tugasan.filter(t => t.email === penggunaLogin.emel)
         : tugasan;
@@ -320,7 +311,7 @@ function muatNotifikasi() {
 // ===== MUAT LAPORAN =====
 function muatLaporan() {
     let senaraiAsas = penggunaLogin.role === 'pelajar'
-        ? laporan.filter(l => l.emailPelajar === penggunaLogin.emel)
+        ? laporan.filter(l => l.email_pelajar === penggunaLogin.emel)
         : laporan;
 
     const selesai = senaraiAsas.filter(l => l.status === 'selesai').length;
@@ -338,7 +329,7 @@ function muatLaporan() {
         senarai.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted);">Tiada laporan harian lagi.</div>`;
     }
 
-    senaraiAsas.slice().reverse().forEach(l => {
+    senaraiAsas.forEach(l => {
         senarai.innerHTML += `
         <div class="laporan-card ${l.status}">
             <div class="task-header">
@@ -356,10 +347,10 @@ function muatLaporan() {
 }
 
 // ===== TANDA SELESAI (SV) =====
-function tandaSelesai(id) {
-    tugasan = tugasan.map(t => t.id === id ? { ...t, status: 'selesai' } : t);
-    simpanTugasanData();
-    muatSemua();
+async function tandaSelesai(id) {
+    const { error } = await supabase.from('tugasan').update({ status: 'selesai' }).eq('id', id);
+    if (error) { alert('❌ Ralat: ' + error.message); return; }
+    await muatSemua();
     alert('✅ Tugasan berjaya ditandakan selesai!');
 }
 
@@ -372,20 +363,22 @@ function bukaModalKemaskini(id) {
     bukaModal('modal-kemaskini');
 }
 
-function simpanKemaskini() {
+async function simpanKemaskini() {
     const id = parseInt(document.getElementById('kemaskini-id').value);
     const status = document.getElementById('kemaskini-status').value;
-    tugasan = tugasan.map(t => t.id === id ? { ...t, status } : t);
-    simpanTugasanData();
+
+    const { error } = await supabase.from('tugasan').update({ status }).eq('id', id);
+    if (error) { alert('❌ Ralat: ' + error.message); return; }
+
     tutupModal('modal-kemaskini');
-    muatSemua();
+    await muatSemua();
     alert('✅ Status tugasan berjaya dikemaskini!');
 }
 
 // ===== TAMBAH TUGASAN (SV) =====
 function bukaModalTugasan() { bukaModal('modal-tugasan'); }
 
-function tambahTugasan() {
+async function tambahTugasan() {
     const tajuk = document.getElementById('input-tajuk').value.trim();
     const tarikh = document.getElementById('input-tarikh').value;
     const pelajar = document.getElementById('input-pelajar').value.trim();
@@ -397,13 +390,11 @@ function tambahTugasan() {
         return;
     }
 
-    tugasan.push({
-        id: Date.now(),
-        tajuk, tarikh, pelajar,
-        email: emailPelajar,
-        reason, status: 'baharu'
+    const { error } = await supabase.from('tugasan').insert({
+        tajuk, tarikh, pelajar, email: emailPelajar, reason, status: 'baharu'
     });
-    simpanTugasanData();
+
+    if (error) { alert('❌ Ralat: ' + error.message); return; }
 
     hantarEmailTugasan(emailPelajar, pelajar, tajuk, tarikh, reason);
 
@@ -414,7 +405,7 @@ function tambahTugasan() {
     document.getElementById('input-reason').value = '';
 
     tutupModal('modal-tugasan');
-    muatSemua();
+    await muatSemua();
     alert('✅ Tugasan berjaya dihantar kepada pelajar!');
 }
 
@@ -424,7 +415,7 @@ function bukaModalLaporan() {
     bukaModal('modal-laporan');
 }
 
-function tambahLaporan() {
+async function tambahLaporan() {
     const skop = document.getElementById('laporan-skop').value.trim();
     const tarikh = document.getElementById('laporan-tarikh').value;
     const status = document.getElementById('laporan-status').value;
@@ -435,19 +426,20 @@ function tambahLaporan() {
         return;
     }
 
-    laporan.push({
-        id: Date.now(),
+    const { error } = await supabase.from('laporan').insert({
         skop, tarikh,
         pelajar: penggunaLogin.nama,
-        emailPelajar: penggunaLogin.emel,
+        email_pelajar: penggunaLogin.emel,
         status, catatan
     });
-    simpanLaporanData();
+
+    if (error) { alert('❌ Ralat: ' + error.message); return; }
 
     document.getElementById('laporan-skop').value = '';
     document.getElementById('laporan-catatan').value = '';
 
     tutupModal('modal-laporan');
+    await ambilLaporanDB();
     muatLaporan();
     alert('✅ Laporan harian berjaya dihantar!');
 }
@@ -492,6 +484,78 @@ function hantarEmailReminder(email, nama, tajuk, tarikh, hari) {
 // ===== MODAL =====
 function bukaModal(id) { document.getElementById(id).style.display = 'flex'; }
 function tutupModal(id) { document.getElementById(id).style.display = 'none'; }
+
+// ===== LUPA KATA LALUAN (SUPABASE) =====
+let emelLupaSemasa = '';
+
+async function semakEmelLupa() {
+    const emel = document.getElementById('lupa-email').value.trim().toLowerCase();
+    const error = document.getElementById('lupa-error');
+    const success = document.getElementById('lupa-success');
+
+    if (!emel) {
+        error.textContent = '⚠️ Sila masukkan emel anda!';
+        error.style.display = 'block';
+        success.style.display = 'none';
+        return;
+    }
+
+    const { data: akaunDijumpai } = await supabase.from('akaun').select('*').eq('emel', emel).maybeSingle();
+
+    if (!akaunDijumpai) {
+        error.textContent = '⚠️ Emel ini tidak didaftarkan dalam sistem!';
+        error.style.display = 'block';
+        success.style.display = 'none';
+        document.getElementById('lupa-set-baru').style.display = 'none';
+        return;
+    }
+
+    emelLupaSemasa = emel;
+    error.style.display = 'none';
+    success.textContent = `✅ Akaun dijumpai atas nama ${akaunDijumpai.nama}. Sila tetapkan kata laluan baharu.`;
+    success.style.display = 'block';
+    document.getElementById('lupa-set-baru').style.display = 'block';
+}
+
+async function tetapkanSemulaPassword() {
+    const passwordBaru = document.getElementById('lupa-password-baru').value;
+    const error = document.getElementById('lupa-error');
+
+    if (!passwordBaru || passwordBaru.length < 4) {
+        error.textContent = '⚠️ Kata laluan perlu sekurang-kurangnya 4 aksara!';
+        error.style.display = 'block';
+        return;
+    }
+
+    const { error: updateError } = await supabase.from('akaun').update({ password: passwordBaru }).eq('emel', emelLupaSemasa);
+    if (updateError) { error.textContent = '⚠️ Ralat: ' + updateError.message; error.style.display = 'block'; return; }
+
+    error.style.display = 'none';
+    alert('✅ Kata laluan berjaya ditetapkan semula! Sila log masuk dengan kata laluan baharu.');
+
+    document.getElementById('lupa-email').value = '';
+    document.getElementById('lupa-password-baru').value = '';
+    document.getElementById('lupa-set-baru').style.display = 'none';
+    document.getElementById('lupa-success').style.display = 'none';
+    papar('login');
+}
+
+// ===== TOGGLE LIHAT KATA LALUAN =====
+function togglePassword(idInput, btn) {
+    const input = document.getElementById(idInput);
+    const iconEye = btn.querySelector('.icon-eye');
+    const iconEyeOff = btn.querySelector('.icon-eye-off');
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        iconEye.style.display = 'none';
+        iconEyeOff.style.display = 'block';
+    } else {
+        input.type = 'password';
+        iconEye.style.display = 'block';
+        iconEyeOff.style.display = 'none';
+    }
+}
 
 // ===== HELPER =====
 function hitungHari(tarikh) {
